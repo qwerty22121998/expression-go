@@ -7,6 +7,8 @@ import (
 
 type Operator string
 
+type OperatorRune rune
+
 type NodeType int64
 
 const (
@@ -16,6 +18,12 @@ const (
 	Div  Operator = "/"
 	Mod  Operator = "%"
 	None Operator = ""
+
+	RAdd OperatorRune = '+'
+	RSub OperatorRune = '-'
+	RMul OperatorRune = '*'
+	RDiv OperatorRune = '/'
+	RMod OperatorRune = '%'
 )
 
 var mpOp map[Operator]bool = map[Operator]bool{
@@ -26,19 +34,50 @@ var mpOp map[Operator]bool = map[Operator]bool{
 	Mod: true,
 }
 
+var mpOpRune map[OperatorRune]Operator = map[OperatorRune]Operator{
+	RAdd: Add,
+	RSub: Sub,
+	RMul: Mul,
+	RDiv: Div,
+	RMod: Mod,
+}
+
 const (
 	TypeOperator NodeType = iota
 	TypeNumber
 )
 
 type Node struct {
-	L, R *Node
-	Type NodeType
-	Op   Operator
-	Val  int64
+	level int64
+	Root  *Node
+	L, R  *Node
+	Type  NodeType
+	Op    Operator
+	Val   int64
+}
+
+func max(a, b int64) int64 {
+	if a > b {
+		return a
+	}
+	return b
+}
+
+func (n *Node) maxLevel() int64 {
+	var l, r int64
+	if n.L != nil {
+		l = n.L.maxLevel()
+	}
+	if n.R != nil {
+		r = n.R.maxLevel()
+	}
+	return max(n.level, max(l, r))
 }
 
 func (n *Node) Calc() (int64, error) {
+	if n.Root != nil {
+		n.level = n.Root.level + 1
+	}
 	var err error
 	var l, r int64
 
@@ -79,4 +118,10 @@ func (n *Node) Calc() (int64, error) {
 	default:
 		return math.MinInt64, fmt.Errorf("node type %v not supported", n.Type)
 	}
+}
+
+func Visualize(tree *Node) {
+	tree.Calc()
+	level := tree.maxLevel()
+	fmt.Println(level)
 }
